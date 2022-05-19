@@ -1,10 +1,10 @@
 mod splice;
 
 use anyhow::{anyhow, ensure, Error, Result};
-use log::{debug, trace, error};
+use log::{debug, error, trace};
 use std::{
-    mem,
     collections::HashMap,
+    mem,
     net::{Shutdown, TcpStream},
     os::unix::prelude::AsRawFd,
     process,
@@ -31,8 +31,20 @@ struct DebuggeeComms {
 
 impl DebuggeeComms {
     pub fn to_timeout(&mut self) -> Result<(JoinHandle<()>, JoinHandle<()>)> {
-        ensure!(matches!(self.aux, DebuggeeCommsAux::Splice{incoming: _, outgoing: _}), "CommsAux was not Splice");
-        match mem::replace(&mut self.aux, DebuggeeCommsAux::Timeout(self.timeout.map(|t| Instant::now() + t))) {
+        ensure!(
+            matches!(
+                self.aux,
+                DebuggeeCommsAux::Splice {
+                    incoming: _,
+                    outgoing: _
+                }
+            ),
+            "CommsAux was not Splice"
+        );
+        match mem::replace(
+            &mut self.aux,
+            DebuggeeCommsAux::Timeout(self.timeout.map(|t| Instant::now() + t)),
+        ) {
             DebuggeeCommsAux::Splice { incoming, outgoing } => Ok((incoming, outgoing)),
             _ => panic!("Found Pattern that should be impossible"),
         }
@@ -54,7 +66,7 @@ impl DebuggeeComms {
                     Err(anyhow!("Wasn't timed out yet"))
                 }
             }
-            _ => Err(anyhow!("CommsAux was not Timout"))
+            _ => Err(anyhow!("CommsAux was not Timout")),
         }
     }
 }

@@ -1,7 +1,7 @@
 mod debuggee;
 mod pidfile;
 
-use anyhow::{anyhow, Result, Error};
+use anyhow::{anyhow, Error, Result};
 use clap::Arg;
 use debuggee::DebuggeeSet;
 use log::info;
