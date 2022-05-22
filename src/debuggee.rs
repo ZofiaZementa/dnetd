@@ -61,6 +61,7 @@ impl DebuggeeComms {
         match self.aux {
             DebuggeeCommsAux::Timeout(Some(t)) => {
                 if Instant::now() >= t {
+                    trace!("socket timed out, shutting down");
                     self.stream.shutdown(Shutdown::Both).map_err(Error::from)
                 } else {
                     Err(anyhow!("Wasn't timed out yet"))
@@ -109,6 +110,7 @@ impl Debuggee {
         let incoming = thread::Builder::new()
             .name("incoming".to_string())
             .spawn(move || {
+                trace!("started incoming thread");
                 loop {
                     match splice::splice(stream_fd_incoming, stdin_fd) {
                         Err(splice::SpliceError::BrokenPipe) => {
@@ -147,6 +149,7 @@ impl Debuggee {
         let outgoing = thread::Builder::new()
             .name("outgoing".to_string())
             .spawn(move || {
+                trace!("started outgoing thread");
                 loop {
                     match splice::splice(stdout_fd, stream_fd_outgoing) {
                         Err(splice::SpliceError::BrokenPipe) => {
@@ -245,7 +248,9 @@ impl DebuggeeSet {
     pub fn cleanup(&mut self) -> Result<HashMap<u32, process::ExitStatus>> {
         let mut exited = HashMap::new();
         for (pid, dres) in self.debuggees.iter_mut().map(|(p, d)| (p, d.cleanup())) {
+            trace!("Tried cleaning up debuggee {}, got {:?}", pid, dres);
             if let Some(d) = dres? {
+                debug!("Debuggee {} exited with {}", pid, d);
                 exited.insert(*pid, d);
             }
         }
