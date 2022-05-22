@@ -1,10 +1,7 @@
-cargo-features = ["strip"]
-
 [package]
 name = "dnetd"
 version = "0.1.0"
-edition = "2018"
-
+edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
@@ -22,4 +19,4 @@ opt-level = "z"
 lto = true
 panic = "abort"
 codegen-units = 1
-strip = "symbols"
+strip = true
