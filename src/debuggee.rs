@@ -50,6 +50,13 @@ impl DebuggeeComms {
         }
     }
 
+    pub fn is_timeout(&self) -> bool {
+        match self.aux {
+            DebuggeeCommsAux::Timeout(_) => true,
+            _ => false,
+        }
+    }
+
     pub fn is_timedout(&self) -> bool {
         match self.aux {
             DebuggeeCommsAux::Timeout(Some(t)) => {
@@ -195,9 +202,22 @@ impl Debuggee {
 
     pub fn cleanup(&mut self) -> Result<Option<process::ExitStatus>> {
         let mut inner = self.inner.write().unwrap();
-        if inner.comms.is_some() && inner.comms.as_ref().unwrap().is_timedout() {
-            inner.comms.as_mut().unwrap().timeout()?;
-            inner.proc.try_wait().map_err(Error::from)
+        // If there are comms, that means the socket is/was connected
+        // If the comms are Timeout, that means that the socket already exited
+        if inner.comms.is_some() && inner.comms.as_ref().unwrap().is_timeout() {
+            // If there also is a timeout value, we need to check if it
+            // timed out. If there isn't we can just check if the process finished
+            if inner.comms.as_ref().unwrap().timeout.is_some() {
+                if inner.comms.as_mut().unwrap().is_timedout() {
+                    //If it timed out, we need to actually close the socket
+                    inner.comms.as_mut().unwrap().timeout()?;
+                    inner.proc.try_wait().map_err(Error::from)
+                } else {
+                    Ok(None)
+                }
+            } else {
+                inner.proc.try_wait().map_err(Error::from)
+            }
         } else {
             Ok(None)
         }
