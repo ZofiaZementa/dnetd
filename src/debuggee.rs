@@ -52,7 +52,11 @@ impl DebuggeeComms {
 
     pub fn is_timedout(&self) -> bool {
         match self.aux {
-            DebuggeeCommsAux::Timeout(Some(t)) => Instant::now() >= t,
+            DebuggeeCommsAux::Timeout(Some(t)) => {
+                let now = Instant::now();
+                trace!("Now: {:?} Timeout: {:?}", now, t);
+                now >= t
+            },
             _ => false,
         }
     }
